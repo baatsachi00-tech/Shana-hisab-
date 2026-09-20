@@ -1,0 +1,50 @@
+name: Build SHANA Hisab APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "SHANA_Hisab_APK_READY.zip"
+      - ".github/workflows/build-apk.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: Extract project
+        run: |
+          unzip -q SHANA_Hisab_APK_READY.zip -d project
+          find project -maxdepth 3 -type f | head -50
+
+      - name: Find Android project
+        run: |
+          find project -name settings.gradle -o -name settings.gradle.kts
+
+      - name: Build APK
+        run: |
+          cd "$(dirname "$(find project -name settings.gradle -o -name settings.gradle.kts | head -1)")"
+          gradle assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SHANA-Hisab-APK
+          path: project/**/build/outputs/apk/debug/*.apk
